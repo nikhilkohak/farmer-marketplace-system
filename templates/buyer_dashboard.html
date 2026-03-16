@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Buyer Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:url("https://images.unsplash.com/photo-1500382017468-9049fed747ef") no-repeat center center/cover;
+min-height:100vh;
+font-family: 'Segoe UI', sans-serif;
+}
+
+/* Sidebar */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+width:230px;
+height:100%;
+background:#1e293b;
+color:white;
+box-shadow:4px 0 10px rgba(0,0,0,0.3);
+}
+
+.sidebar h3{
+margin-bottom:30px;
+}
+
+.sidebar a{
+display:block;
+color:white;
+padding:12px;
+text-decoration:none;
+margin-bottom:10px;
+border-radius:8px;
+transition:0.3s;
+}
+
+.sidebar a:hover{
+background:#334155;
+padding-left:18px;
+}
+
+/* Main container */
+
+.main{
+margin-left:250px;
+padding:30px;
+}
+
+/* Welcome banner */
+
+.header-box{
+background: linear-gradient(135deg,#667eea,#764ba2);
+color:white;
+padding:25px;
+border-radius:15px;
+margin-bottom:25px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+/* Cards */
+
+.card-glass{
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(10px);
+border-radius:15px;
+border:1px solid rgba(255,255,255,0.2);
+box-shadow:0 8px 25px rgba(0,0,0,0.4);
+color:white;
+}
+
+.card-glass:hover{
+transform:translateY(-5px);
+transition:0.3s;
+}
+
+/* Table */
+
+.table{
+background:white;
+border-radius:10px;
+overflow:hidden;
+}
+
+/* Buttons */
+
+.btn{
+border-radius:8px;
+}
+
+.btn:hover{
+transform:scale(1.05);
+}
+
+/* Chart box */
+
+.chart-box{
+background:rgba(255,255,255,0.9);
+padding:20px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,0.3);
+}
+
+.logo-box{
+background:#e86d6d;
+padding:12px;
+text-align:center;
+margin-bottom:25px;
+color:white;
+}
+.list-dashboard{
+    padding-left: 20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+<div class="logo-box">
+<h3> Farmer's Dashboard</h3>
+</div>
+<div class="list-dashboard">
+<a href="{{ url_for('buyer_dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
+<a href="{{ url_for('add_crop') }}"><i class="fa fa-seedling"></i> Add Crop</a>
+<a href="{{ url_for('orders') }}"><i class="fa fa-cart-shopping"></i> Orders</a>
+<a href="#"><i class="fa fa-users"></i> Farmers</a>
+<a href="#"><i class="fa fa-chart-line"></i> Reports</a>
+<a href="/login"><i class="fa fa-sign-out"></i> Logout</a>
+</div>
+</div>
+
+<div class="main">
+
+<div class="header-box">
+<h2>Welcome Back {{ buyer.name }} </h2>
+</div>
+
+<!-- Statistics -->
+
+<div class="row text-center mb-4">
+
+<div class="col-md-4">
+<div class="card-glass p-4">
+<h2>{{ total_crops }}</h2>
+<p>Total Crops</p>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card-glass p-4">
+<h2>5</h2>
+<p>Active Farmers</p>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card-glass p-4">
+<h2>₹{{ total_trading }}</h2>
+<p>Total Trading</p>
+</div>
+</div>
+
+</div>
+
+<!-- Profile Section -->
+
+{% if not buyer.company_name %}
+
+<div class="card card-glass p-4 mb-4">
+
+<h4>Complete Your Profile</h4>
+
+<form method="POST">
+
+<input type="text" name="company_name" class="form-control mb-3" placeholder="Company Name" required>
+
+<input type="text" name="location" class="form-control mb-3" placeholder="Location" required>
+
+<input type="text" name="contact_no" class="form-control mb-3" placeholder="Contact Number" required>
+
+<button class="btn btn-primary">Save Profile</button>
+
+</form>
+
+</div>
+
+{% else %}
+
+<div class="card card-glass p-4 mb-4">
+
+<h4>Personal Information</h4>
+
+<p><b>Name:</b> {{ buyer.name }}</p>
+<p><b>Company:</b> {{ buyer.company_name }}</p>
+<p><b>Location:</b> {{ buyer.location }}</p>
+<p><b>Contact:</b> {{ buyer.contact_no }}</p>
+
+<a href="{{ url_for('edit_profile') }}" class="btn btn-warning">
+<i class="fa fa-edit"></i> Edit Profile
+</a>
+
+</div>
+
+{% endif %}
+
+
+
+<!-- Crop Table -->
+
+<h4 class="mb-3" style="color: white;">Your Crop Prices</h4>
+
+<div class="table-responsive">
+
+<table class="table table-bordered table-hover">
+
+<thead class="table-dark">
+
+<tr>
+<th><i class="fa fa-seedling"></i> Crop</th>
+<th><i class="fa fa-indian-rupee-sign"></i> Price</th>
+<th><center><i class="fa fa-gear"></i> Action</center></th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for row in crops %}
+
+<tr>
+
+<td>{{ row.crop_name }}</td>
+
+<td>₹ {{ row.price }}</td>
+
+<td>
+<center>
+<a href="{{ url_for('update_price', id=row.id) }}"
+class="btn btn-sm btn-primary">
+
+<i class="fa fa-pen"></i> Update
+</a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="{{ url_for('delete_price', id=row.id) }}"
+class="btn btn-sm btn-danger"
+onclick="return confirm('Delete this crop?');">
+
+<i class="fa fa-trash"></i> Delete
+</a>
+</center>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+</div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Farmer Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1950&q=80") no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 240px;
+            background: rgba(30, 41, 59, 0.95);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .sidebar h3 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .sidebar a {
+            color: #fff;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar a:hover {
+            background: #334155;
+            padding-left: 25px;
+        }
+
+        /* Main content */
+        .main {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .header-box {
+            background: rgba(102, 126, 234, 0.85);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .card-glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            margin-bottom: 25px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            transition: transform 0.3s;
+        }
+
+        .card-glass:hover {
+            transform: translateY(-5px);
+        }
+
+        .table-responsive {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .table th, .table td {
+            vertical-align: middle !important;
+        }
+
+        .btn {
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 10px;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h3>Farmer Dashboard</h3>
+    <a href="{{ url_for('farmer_dashboard') }}"><i class="fa fa-home"></i> Dashboard</a>
+    <a href="{{ url_for('add_quantity') }}"><i class="fa fa-seedling"></i> Add Crop Quantity</a>
+    <a href="{{ url_for('search_crop') }}"><i class="fa fa-chart-line"></i> Crop Prices</a>
+     <a href="{{ url_for('farmer_orders') }}"><i class="fa fa-shopping-cart"></i> Orders</a>
+<a href="{{ url_for('farmer_order_history') }}">
+<i class="fa fa-clock-rotate-left"></i> Order History
+</a>
+    <a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+    <!-- Header -->
+    <div class="header-box">
+        <h2>Welcome Back {{ name }} 👨‍🌾</h2>
+    </div>
+
+    <!-- Profile Section -->
+    {% if farmer_info %}
+    <div class="card-glass">
+        <h4>Your Information</h4>
+        <p><b>Name:</b> {{ name }}</p>
+        <p><b>Contact:</b> {{ farmer_info.contact_no }}</p>
+        <p><b>Location:</b> {{ farmer_info.location }}</p>
+        <a href="{{ url_for('edit_farmer_info') }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit Info</a>
+    </div>
+    {% else %}
+    <div class="card-glass">
+        <h4>Complete Your Information</h4>
+        <form method="POST" action="{{ url_for('farmer_dashboard') }}">
+            <input type="text" name="name" class="form-control mb-3" placeholder="Your Name" required>
+            <input type="text" name="contact_no" class="form-control mb-3" placeholder="Contact Number" required>
+            <input type="text" name="location" class="form-control mb-3" placeholder="Location" required>
+            <button class="btn btn-primary"><i class="fa fa-save"></i> Save Info</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Crop List Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th><i class="fa fa-seedling"></i> Crop</th>
+                    <th><i class="fa fa-weight-hanging"></i> Quantity (Quintal)</th>
+                    <th><i class="fa fa-indian-rupee-sign"></i> Selling Price</th>
+                    <th class="text-center"><i class="fa fa-gear"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for crop in crops %}
+                <tr>
+                    <td>{{ crop.crop_name }}</td>
+                    <td>{{ crop.quantity }}</td>
+                    <td>{{ crop.selling_price }}</td>
+                    <td class="text-center">
+                        <a href="{{ url_for('update_quantity', id=crop.id) }}" class="btn btn-sm btn-primary"><i class="fa fa-pen"></i> Update</a>
+                        <a href="{{ url_for('delete_quantity', id=crop.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this crop?');"><i class="fa fa-trash"></i> Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
