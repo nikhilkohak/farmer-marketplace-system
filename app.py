@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -737,6 +739,96 @@ def give_order(user_id, crop_id):
         user_id=user_id,
         crop_id=crop_id
     )
+
+
+@app.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+        email = request.form["email"]
+
+        cursor = db.cursor(dictionary=True)
+
+        # Check in users table
+        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        # Check in buyers table
+        cursor.execute("SELECT * FROM buyers WHERE email=%s", (email,))
+        buyer = cursor.fetchone()
+
+        if user:
+            return redirect(url_for("reset_password", email=email, table="users"))
+
+        elif buyer:
+            return redirect(url_for("reset_password", email=email, table="buyers"))
+
+        else:
+            return "Email not found"
+
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset_password", methods=["GET", "POST"])
+def reset_password():
+
+    email = request.args.get("email")
+    table = request.args.get("table")
+
+    if request.method == "POST":
+        new_password = request.form["password"]
+        hashed_password = generate_password_hash(new_password)
+
+        cursor = db.cursor()
+
+        cursor.execute(f"""
+            UPDATE {table}
+            SET password=%s
+            WHERE email=%s
+        """, (hashed_password, email))
+
+        db.commit()
+
+        return redirect(url_for("login"))
+
+    return render_template("reset_password.html")
+
+
+    cursor = db.cursor(dictionary=True)
+
+    # Check users table
+    cursor.execute("SELECT * FROM users WHERE reset_token=%s", (token,))
+    user_data = cursor.fetchone()
+
+    # Check buyers table
+    cursor.execute("SELECT * FROM buyers WHERE reset_token=%s", (token,))
+    buyer_data = cursor.fetchone()
+
+    user = user_data if user_data else buyer_data
+    table = "users" if user_data else "buyers" if buyer_data else None
+
+    if not user:
+        return "Invalid token"
+
+    # Check expiry
+    if user["token_expiry"] < datetime.now():
+        return "Token expired"
+
+    if request.method == "POST":
+        new_password = request.form["password"]
+        hashed_password = generate_password_hash(new_password)
+
+        cursor.execute(f"""
+            UPDATE {table}
+            SET password=%s, reset_token=NULL, token_expiry=NULL
+            WHERE id=%s
+        """, (hashed_password, user["id"]))
+
+        db.commit()
+
+        return redirect(url_for("login"))
+
+    return render_template("reset_password.html")
 
 # ================= RUN =================
 
